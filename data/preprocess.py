@@ -21,6 +21,17 @@ DATASET = {
 }
 
 
+MEAN = {
+    "mnist": (0.1307,),
+    "cifar10": (0.4914, 0.4822, 0.4465),
+}
+
+STD = {
+    "mnist": (0.3015,),
+    "cifar10": (0.2023, 0.1994, 0.2010),
+}
+
+
 def preprocess(args):
     np.random.seed(args.seed)
     random.seed(args.seed)
@@ -29,6 +40,10 @@ def preprocess(args):
     num_test_clients = args.client_num_in_total - num_train_clients
     dataset_dir = CURRENT_DIR / args.dataset
     pickles_dir = CURRENT_DIR / args.dataset / "pickles"
+    transform = transforms.Compose(
+        [transforms.Normalize(MEAN[args.dataset], STD[args.dataset]),]
+    )
+    target_transform = None
     if not os.path.isdir(CURRENT_DIR / args.dataset):
         os.mkdir(CURRENT_DIR / args.dataset)
     if os.path.isdir(pickles_dir):
@@ -36,35 +51,43 @@ def preprocess(args):
     os.mkdir(f"{pickles_dir}")
 
     ori_dataset, target_dataset = DATASET[args.dataset]
-    trainset = ori_dataset(
-        dataset_dir,
-        train=True,
-        transform=transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize(0.0, 1.0)]
-        ),
-        download=True,
-    )
-    testset = ori_dataset(
-        dataset_dir,
-        train=False,
-        transform=transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize(0.0, 1.0)]
-        ),
-    )
+    trainset = ori_dataset(dataset_dir, train=True, download=True,)
+    testset = ori_dataset(dataset_dir, train=False,)
+
     if args.alpha > 0:  # performing Dirichlet(alpha) partition
         all_trainsets = dirichlet_distribution(
-            trainset, target_dataset, num_train_clients, args.alpha
+            ori_dataset=trainset,
+            target_dataset=target_dataset,
+            num_clients=num_train_clients,
+            alpha=args.alpha,
+            transform=transform,
+            target_transform=target_transform,
         )
         all_testsets = dirichlet_distribution(
-            testset, target_dataset, num_test_clients, args.alpha
+            ori_dataset=testset,
+            target_dataset=target_dataset,
+            num_clients=num_test_clients,
+            alpha=args.alpha,
+            transform=transform,
+            target_transform=target_transform,
         )
     else:
         classes = ori_dataset.classes if args.classes <= 0 else args.classes
         all_trainsets = randomly_alloc_classes(
-            trainset, target_dataset, num_train_clients, classes
+            ori_dataset=trainset,
+            target_dataset=target_dataset,
+            num_clients=num_train_clients,
+            num_classes=classes,
+            transform=transform,
+            target_transform=target_transform,
         )
         all_testsets = randomly_alloc_classes(
-            testset, target_dataset, num_test_clients, classes
+            ori_dataset=testset,
+            target_dataset=target_dataset,
+            num_clients=num_test_clients,
+            num_classes=classes,
+            transform=transform,
+            target_transform=target_transform,
         )
 
     all_datasets = all_trainsets + all_testsets
@@ -103,8 +126,8 @@ if __name__ == "__main__":
     ################# For dirichlet distribution only #################
     parser.add_argument(
         "--alpha",
-        type=int,
-        default=0,
+        type=float,
+        default=0.0,
         help="Only for control non-iid level while performing Dirichlet partition.",
     )
     ###################################################################

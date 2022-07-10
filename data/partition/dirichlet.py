@@ -5,17 +5,26 @@ from torch.utils.data import Dataset
 
 # Codes below are modified from https://github.com/WonJoon-Yun/Non-IID-Dataset-Generator-Dirichlet
 def dirichlet_distribution(
-    ori_dataset: Dataset, target_dataset: Dataset, num_clients: int, alpha: int
+    ori_dataset: Dataset,
+    target_dataset: Dataset,
+    num_clients: int,
+    alpha: int,
+    transform=None,
+    target_transform=None,
 ) -> List[Dataset]:
     """
-    It takes a dataset, a number of clients, and a parameter $\alpha$ and returns a list of datasets,
-    each of which is a subset of the original dataset
+    `dirichlet_distribution` takes a dataset, a number of clients, a number of classes, and a
+    hyperparameter alpha, and returns a list of datasets, each of which is a subset of the original
+    dataset
     
     Args:
-      ori_dataset (Dataset): The original dataset that we want to split.
-      target_dataset (Dataset): The dataset that you want to split.
+      ori_dataset (Dataset): the original dataset
+      target_dataset (Dataset): the dataset that you want to split
       num_clients (int): the number of clients
       alpha (int): the parameter of the Dirichlet distribution.
+      transform: A function/transform that takes in an PIL image or a numpy array and returns a transformed version. E.g,
+    transforms.RandomCrop
+      target_transform: A function/transform that takes in the target and transforms it.
     
     Returns:
       A list of datasets.
@@ -29,7 +38,6 @@ def dirichlet_distribution(
     idx = [torch.where(ori_dataset.targets == i) for i in range(num_classes)]
     data = [ori_dataset.data[idx[i][0]] for i in range(num_classes)]
     label = [torch.ones(len(data[i]), dtype=torch.long) * i for i in range(num_classes)]
-
     s = np.random.dirichlet(np.ones(num_classes) * alpha, num_clients)
     data_dist = np.zeros((num_clients, num_classes))
 
@@ -59,5 +67,13 @@ def dirichlet_distribution(
                 y_data.append(label[i][d_index])
         X.append(torch.cat(x_data))
         Y.append(torch.cat(y_data))
-    datasets = [target_dataset(data=X[j], targets=Y[j]) for j in range(num_clients)]
+    datasets = [
+        target_dataset(
+            data=X[j],
+            targets=Y[j],
+            transform=transform,
+            target_transform=target_transform,
+        )
+        for j in range(num_clients)
+    ]
     return datasets

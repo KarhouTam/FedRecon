@@ -3,7 +3,16 @@ from torch.utils.data import Dataset
 
 
 class MNISTDataset(Dataset):
-    def __init__(self, subset=None, data=None, targets=None) -> None:
+    def __init__(
+        self,
+        subset=None,
+        data=None,
+        targets=None,
+        transform=None,
+        target_transform=None,
+    ) -> None:
+        self.transform = transform
+        self.target_transform = target_transform
         if (data is not None) and (targets is not None):
             self.data = data.unsqueeze(1)
             self.targets = targets
@@ -18,14 +27,31 @@ class MNISTDataset(Dataset):
             )
 
     def __getitem__(self, index):
-        return self.data[index], self.targets[index]
+        data, targets = self.data[index], int(self.targets[index])
+
+        if self.transform is not None:
+            data = self.transform(self.data[index])
+
+        if self.target_transform is not None:
+            targets = self.target_transform(self.targets[index])
+
+        return data, targets
 
     def __len__(self):
         return len(self.targets)
 
 
 class CIFARDataset(Dataset):
-    def __init__(self, subset=None, data=None, targets=None) -> None:
+    def __init__(
+        self,
+        subset=None,
+        data=None,
+        targets=None,
+        transform=None,
+        target_transform=None,
+    ) -> None:
+        self.transform = transform
+        self.target_transform = target_transform
         if (data is not None) and (targets is not None):
             self.data = data.reshape(-1, 3, 32, 32)
             self.targets = targets
@@ -40,7 +66,16 @@ class CIFARDataset(Dataset):
             )
 
     def __getitem__(self, index):
-        return self.data[index], self.targets[index]
+        img, targets = self.data[index], self.targets[index]
+
+        if self.transform is not None:
+            img = self.transform(self.data[index])
+
+        if self.target_transform is not None:
+            targets = self.target_transform(self.targets[index])
+
+        return img, targets
 
     def __len__(self):
         return len(self.targets)
+
