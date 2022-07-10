@@ -1,0 +1,19 @@
+# cache folder
+__pycache__
+
+# pickle data
+pickles
+
+# raw data
+MNIST
+cifar-10-batches-py
+
+# clients folder
+clients
+
+# log folder
+log
+
+# configuration folders
+.idea
+.vscode
