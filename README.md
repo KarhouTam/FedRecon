@@ -2,7 +2,7 @@
 
 PyTorch Implementation of FedRecon
 
-For simulating the Non-I.I.D scenario, the dataset is split according to [Dirichlet distribution($\alpha$)](https://arxiv.org/abs/1909.06335) by default. Furthermore, I offer another splitting method: allocating data that belong to a random subset of labels to each client.
+For simulating the Non-I.I.D scenario, the dataset is split according to [Dirichlet distribution](https://arxiv.org/abs/1909.06335)($\alpha$) by default. Furthermore, I offer another splitting method: allocating data that belong to a random subset of labels to each client.
 
 I choose the more regular machine learning task for demonstrating algorithms, which is image classification instead of matrix factorization in the paper. And the experiment is just a toy demo, so please take it easy. 🤣
 
