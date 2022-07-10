@@ -1,4 +1,4 @@
-# Federated Reconstruction: Partially Local Federated Learning [Paper](https://proceedings.neurips.cc/paper/2021/hash/5d44a2b0d85aa1a4dd3f218be6422c66-Abstract.html)
+# Federated Reconstruction: Partially Local Federated Learning [[Paper]](https://proceedings.neurips.cc/paper/2021/hash/5d44a2b0d85aa1a4dd3f218be6422c66-Abstract.html)
 
 PyTorch Implementation of FedRecon
 
