@@ -1,6 +1,8 @@
 # Federated Reconstruction: Partially Local Federated Learning [[Paper]](https://proceedings.neurips.cc/paper/2021/hash/5d44a2b0d85aa1a4dd3f218be6422c66-Abstract.html)
 
-PyTorch Implementation of FedRecon
+PyTorch Implementation of FedRecon.
+
+TensorFlow Implementation(Official): [Repo](https://github.com/google-research/federated/tree/master/reconstruction)
 
 For simulating the Non-I.I.D scenario, the dataset is split according to [Dirichlet distribution](https://arxiv.org/abs/1909.06335)($\alpha$) by default. Furthermore, I offer another splitting method: allocating data that belong to a random subset of labels to each client.
 
