@@ -3,12 +3,20 @@ from collections import OrderedDict
 
 # NOTE:
 # If you wanna build your own model, please inherit your model class from MetaModel,
-# and overwrite variances: {self.global_layers, self.local_layers}
+# and using split_model([local layers defined by you]) at the end of __init__()
 class MetaModel(nn.Module):
-    def __init__(self):
+    def __init__(self,):
         super(MetaModel, self).__init__()
-        self.global_layers = []
+        self.layers_name = []
         self.local_layers = []
+        self.global_layers = []
+
+    def _split_model(self, local_layers=[]):      
+        self.layers_name = list(
+            set([name.split(".")[0] for name, _ in self.named_parameters()])
+        )
+        self.local_layers = local_layers
+        self.global_layers = list(set(self.layers_name) - set(self.local_layers))
 
     def global_params(self, requires_name=False, data_only=False):
         return self._specific_parameters(self.global_layers, requires_name, data_only)
@@ -63,8 +71,7 @@ class CNN_MNIST(MetaModel):
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 10)
         # NOTE: layer's name must be identical to the corresponding layer variance's name
-        self.global_layers = ["conv1", "bn1", "conv2", "bn2"]
-        self.local_layers = ["fc1", "fc2"]
+        self._split_model(local_layers=["fc1", "fc2"])
 
     def forward(self, x):
         x = self.conv1(x)
@@ -99,8 +106,7 @@ class CNN_CIFAR10(MetaModel):
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
-        self.global_layers = ["conv1", "bn1", "conv2", "bn2"]
-        self.local_layers = ["fc1", "fc2", "fc3"]
+        self._split_model(local_layers=["fc1", "fc2", "fc3"])
 
     def forward(self, x):
         x = self.conv1(x)
