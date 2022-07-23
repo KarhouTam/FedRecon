@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset
+from torchvision.transforms import ToTensor
 
 
 class MNISTDataset(Dataset):
@@ -14,13 +15,34 @@ class MNISTDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         if (data is not None) and (targets is not None):
-            self.data = data.unsqueeze(1)
-            self.targets = targets
+            if not isinstance(data, torch.Tensor):
+                data = torch.tensor(data)
+            self.data = data.float().unsqueeze(1)
+
+            if not isinstance(targets, torch.Tensor):
+                targets = torch.tensor(targets)
+            self.targets = targets.long()
         elif subset is not None:
-            self.data = torch.stack(list(map(lambda tup: tup[0], subset)))
+            self.data = torch.stack(
+                list(
+                    map(
+                        lambda tup: tup[0]
+                        if isinstance(tup[0], torch.Tensor)
+                        else ToTensor()(tup[0]),
+                        subset,
+                    )
+                )
+            ).float()
             self.targets = torch.stack(
-                list(map(lambda tup: torch.tensor(tup[1]), subset))
-            )
+                list(
+                    map(
+                        lambda tup: tup[1]
+                        if isinstance(tup[1], torch.Tensor)
+                        else torch.tensor(tup[1]),
+                        subset,
+                    )
+                )
+            ).long()
         else:
             raise ValueError(
                 "Data Format: subset: Tuple(data: Tensor, targets: Tensor) OR data: List[Tensor]  targets: List[Tensor]"
@@ -53,17 +75,38 @@ class CIFARDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         if (data is not None) and (targets is not None):
-            self.data = data.reshape(-1, 3, 32, 32)
-            self.targets = targets
+            if not isinstance(data, torch.Tensor):
+                data = torch.tensor(data)
+            self.data = data.float().reshape(-1, 3, 32, 32)
+
+            if not isinstance(targets, torch.Tensor):
+                targets = torch.tensor(targets)
+            self.targets = targets.long()
         elif subset is not None:
-            self.data = torch.stack(list(map(lambda tup: tup[0], subset)))
+            self.data = (
+                torch.stack(
+                    list(
+                        map(
+                            lambda tup: tup[0]
+                            if isinstance(tup[0], torch.Tensor)
+                            else ToTensor()(tup[0]),
+                            subset,
+                        )
+                    )
+                )
+                .float()
+                .reshape(-1, 3, 32, 32)
+            )
             self.targets = torch.stack(
-                list(map(lambda tup: torch.tensor(tup[1]), subset))
-            )
-        else:
-            raise ValueError(
-                "Data Format: subset: Tuple(data: Tensor, targets: Tensor) OR data: List[Tensor]  targets: List[Tensor]"
-            )
+                list(
+                    map(
+                        lambda tup: tup[1]
+                        if isinstance(tup[1], torch.Tensor)
+                        else torch.tensor(tup[1]),
+                        subset,
+                    )
+                )
+            ).long()
 
     def __getitem__(self, index):
         img, targets = self.data[index], self.targets[index]

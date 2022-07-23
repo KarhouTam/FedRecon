@@ -6,12 +6,14 @@ import torch
 import os
 import random
 from rich.console import Console
+from rich.progress import track
 from algorithms import FedReconTrainer, FedAvgTrainer
 from utils import LOG_DIR, fix_random_seed, get_args
 from data.utils import get_client_id_indices
 from collections import OrderedDict
 from model import get_model
 from copy import deepcopy
+
 
 SEEN_CLIENTS_ID = set()
 TRAINER_DICT = {"fedrecon": FedReconTrainer, "fedavg": FedAvgTrainer}
@@ -28,18 +30,7 @@ if __name__ == "__main__":
     if not os.path.isdir("log"):
         os.mkdir("log")
 
-    logger = Console(record=True)
-
-    log_path = (
-        LOG_DIR / args.algo
-        + "_"
-        + args.dataset
-        + "_"
-        + str(args.global_epochs)
-        + "_"
-        + str(args.client_num_per_round)
-        + ".html"
-    )
+    logger = Console(record=args.log)
 
     if args.gpu != 0 and torch.cuda.is_available():
         device = torch.device("cuda")
@@ -53,7 +44,9 @@ if __name__ == "__main__":
     logger.log(f"Arguments:\n{dict(args._get_kwargs())}", justify="left")
     # training
     logger.log("=" * 30, "TRAINING", "=" * 30, style="bold yellow")
-    for _ in range(args.global_epochs):
+    for _ in track(
+        range(args.global_epochs), "Training...", console=logger, disable=args.log
+    ):
         diff_list = []
         weight_list = []
         selected_clients = random.sample(train_clients, args.client_num_per_round)
@@ -105,7 +98,9 @@ if __name__ == "__main__":
         model_params = deepcopy(OrderedDict(model.named_parameters()))
     global_params = model.global_params(requires_name=True, data_only=True)
     all_results = {"loss_before": 0, "loss_after": 0, "acc_before": 0, "acc_after": 0}
-    for client_id in test_clients:
+    for client_id in track(
+        test_clients, "Evaluating...", console=logger, disable=args.log
+    ):
         result = trainer.eval(client_id=client_id, model_params=model_params)
         all_results["loss_before"] += result["loss_before"]
         all_results["loss_after"] += result["loss_after"]
@@ -132,4 +127,15 @@ if __name__ == "__main__":
         style="bold blue",
     )
 
-    logger.save_html(log_path)
+    if args.log:
+        log_path = (
+            LOG_DIR / args.algo
+            + "_"
+            + args.dataset
+            + "_"
+            + str(args.global_epochs)
+            + "_"
+            + str(args.client_num_per_round)
+            + ".html"
+        )
+        logger.save_html(log_path)

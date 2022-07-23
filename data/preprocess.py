@@ -6,9 +6,10 @@ import pickle
 import numpy as np
 import random
 import torch
+import json
 from path import Path
 from argparse import ArgumentParser
-from torchvision.datasets import MNIST, CIFAR10, CIFAR100
+from torchvision.datasets import MNIST, CIFAR10
 from torchvision import transforms
 from dataset import MNISTDataset, CIFARDataset
 from partition import dirichlet_distribution, randomly_alloc_classes
@@ -33,26 +34,26 @@ STD = {
 
 
 def preprocess(args):
+    DATASET_DIR = CURRENT_DIR / args.dataset
+    PICKLES_DIR = DATASET_DIR / "pickles"
     np.random.seed(args.seed)
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     num_train_clients = int(args.client_num_in_total * args.fraction)
     num_test_clients = args.client_num_in_total - num_train_clients
-    dataset_dir = CURRENT_DIR / args.dataset
-    pickles_dir = CURRENT_DIR / args.dataset / "pickles"
     transform = transforms.Compose(
         [transforms.Normalize(MEAN[args.dataset], STD[args.dataset]),]
     )
     target_transform = None
-    if not os.path.isdir(CURRENT_DIR / args.dataset):
-        os.mkdir(CURRENT_DIR / args.dataset)
-    if os.path.isdir(pickles_dir):
-        os.system(f"rm -rf {pickles_dir}")
-    os.mkdir(f"{pickles_dir}")
+    if not os.path.isdir(DATASET_DIR):
+        os.mkdir(DATASET_DIR)
+    if os.path.isdir(PICKLES_DIR):
+        os.system(f"rm -rf {PICKLES_DIR}")
+    os.mkdir(f"{PICKLES_DIR}")
 
     ori_dataset, target_dataset = DATASET[args.dataset]
-    trainset = ori_dataset(dataset_dir, train=True, download=True,)
-    testset = ori_dataset(dataset_dir, train=False,)
+    trainset = ori_dataset(DATASET_DIR, train=True, download=True,)
+    testset = ori_dataset(DATASET_DIR, train=False,)
 
     if args.alpha > 0:  # performing Dirichlet(alpha) partition
         all_trainsets = dirichlet_distribution(
@@ -72,7 +73,7 @@ def preprocess(args):
             target_transform=target_transform,
         )
     else:
-        classes = ori_dataset.classes if args.classes <= 0 else args.classes
+        classes = len(ori_dataset.classes) if args.classes <= 0 else args.classes
         all_trainsets = randomly_alloc_classes(
             ori_dataset=trainset,
             target_dataset=target_dataset,
@@ -92,10 +93,14 @@ def preprocess(args):
 
     all_datasets = all_trainsets + all_testsets
 
-    for client_id, dataset in enumerate(all_datasets):
-        with open(pickles_dir / str(client_id) + ".pkl", "wb") as f:
-            pickle.dump(dataset, f)
-    with open(pickles_dir / "seperation.pkl", "wb") as f:
+    for subset_id, client_id in enumerate(
+        range(0, len(all_datasets), args.client_num_in_each_pickles)
+    ):
+        subset = all_datasets[client_id : client_id + args.client_num_in_each_pickles]
+        with open(PICKLES_DIR / str(subset_id) + ".pkl", "wb") as f:
+            pickle.dump(subset, f)
+
+    with open(PICKLES_DIR / "seperation.pkl", "wb") as f:
         pickle.dump(
             {
                 "train": [i for i in range(num_train_clients)],
@@ -131,5 +136,11 @@ if __name__ == "__main__":
         help="Only for control non-iid level while performing Dirichlet partition.",
     )
     ###################################################################
+    parser.add_argument("--client_num_in_each_pickles", type=int, default=10)
+
     args = parser.parse_args()
     preprocess(args)
+    args_dict = dict(args._get_kwargs())
+    with open("args.json", "w") as f:
+        json.dump(args_dict, f)
+

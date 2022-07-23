@@ -29,6 +29,7 @@ def get_args() -> Namespace:
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--gpu", type=int, default=1)
     parser.add_argument("--valset_ratio", type=float, default=0.1)
+    parser.add_argument("--log", type=int, default=0)
     return parser.parse_args()
 
 

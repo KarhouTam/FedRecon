@@ -17,3 +17,6 @@ log
 # configuration folders
 .idea
 .vscode
+
+# args json
+args.json
