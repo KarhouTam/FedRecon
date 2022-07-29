@@ -122,6 +122,9 @@ def preprocess(args):
             },
             f,
         )
+    args.dataset_dir = (
+        DATASET_DIR if str(DATASET_DIR) != str(CURRENT_DIR / args.dataset) else None
+    )
 
 
 if __name__ == "__main__":
