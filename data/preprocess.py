@@ -46,9 +46,7 @@ def preprocess(args):
     num_train_clients = int(args.client_num_in_total * args.fraction)
     num_test_clients = args.client_num_in_total - num_train_clients
     transform = transforms.Compose(
-        [
-            transforms.Normalize(MEAN[args.dataset], STD[args.dataset]),
-        ]
+        [transforms.Normalize(MEAN[args.dataset], STD[args.dataset]),]
     )
     target_transform = None
     if not os.path.isdir(DATASET_DIR):
@@ -58,15 +56,8 @@ def preprocess(args):
     os.mkdir(f"{PICKLES_DIR}")
 
     ori_dataset, target_dataset = DATASET[args.dataset]
-    trainset = ori_dataset(
-        DATASET_DIR,
-        train=True,
-        download=True,
-    )
-    testset = ori_dataset(
-        DATASET_DIR,
-        train=False,
-    )
+    trainset = ori_dataset(DATASET_DIR, train=True, download=True,)
+    testset = ori_dataset(DATASET_DIR, train=False,)
 
     if args.alpha > 0:  # performing Dirichlet(alpha) partition
         all_trainsets = dirichlet_distribution(
@@ -123,7 +114,9 @@ def preprocess(args):
             f,
         )
     args.dataset_dir = (
-        DATASET_DIR if str(DATASET_DIR) != str(CURRENT_DIR / args.dataset) else None
+        Path(args.dataset_dir).abspath()
+        if str(DATASET_DIR) != str(CURRENT_DIR / args.dataset)
+        else None
     )
 
 
