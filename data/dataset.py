@@ -77,7 +77,7 @@ class CIFARDataset(Dataset):
         if (data is not None) and (targets is not None):
             if not isinstance(data, torch.Tensor):
                 data = torch.tensor(data)
-            self.data = data.float().reshape(-1, 3, 32, 32)
+            self.data = torch.permute(data, [0, -1, 1, 2]).float()
 
             if not isinstance(targets, torch.Tensor):
                 targets = torch.tensor(targets)
